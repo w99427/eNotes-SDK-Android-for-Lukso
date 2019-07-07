@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">=lukso</string>
-    <string name="card_close_to_phone_nfc">Please put the physical card near the NFC induction area</string>
+    <string name="card_close_to_phone_nfc">Please scan LUKSO NFC Chip with your phone.</string>
     <string name="card_name">Currency：</string>
     <string name="card_balance">Balance</string>
     <string name="card_balance1">Balance</string>

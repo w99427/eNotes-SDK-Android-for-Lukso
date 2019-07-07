@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">lukso Demo</string>
     <string name="appbar_scrolling_view_behavior" translatable="false">android.support.design.widget.AppBarLayout$ScrollingViewBehavior</string>
-    <string name="card_close_to_phone_nfc">请将实体币靠近手机NFC感应处</string>
+    <string name="card_close_to_phone_nfc">Please scan LUKSO NFC Chip with your phone.</string>
     <string name="card_balance">余额</string>
     <string name="card_balance1">余额</string>
     <string name="card_status">安全状态</string>

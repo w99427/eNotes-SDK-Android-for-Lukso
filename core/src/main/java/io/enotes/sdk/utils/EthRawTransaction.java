@@ -61,6 +61,7 @@ public class EthRawTransaction {
                 LogUtils.i(TAG,"R->"+ecdsaSignature.r.toString(16)+"\n S->"+ecdsaSignature.s.toString(16));
                 pair.setR(ecdsaSignature.r.toString(16));
                 pair.setS(ecdsaSignature.s.toString(16));
+                pair.setV((int)ecdsaSignature.v);
                 Transaction rawTx = new Transaction(nonce, gasPrice, gasLimit, receiveAddress, value, data, ecdsaSignature.r.toByteArray(), ecdsaSignature.s.toByteArray(), ecdsaSignature.v);
                 String hexString = ByteUtil.toHexString(rawTx.getEncoded());
                 pair.setRawTx(hexString);
@@ -76,6 +77,7 @@ public class EthRawTransaction {
     public static class Pair{
         private String r;
         private String s;
+        private int v;
         private String rawTx;
 
         public String getR() {
@@ -92,6 +94,14 @@ public class EthRawTransaction {
 
         public void setS(String s) {
             this.s = s;
+        }
+
+        public int getV() {
+            return v;
+        }
+
+        public void setV(int v) {
+            this.v = v;
         }
 
         public String getRawTx() {
