@@ -33,7 +33,7 @@ public class SignatureUtils {
      * @param strSignature
      * @return
      */
-    public static ECKey.ECDSASignature str2EthSignature(int network, @NonNull ECKey ecKey, @NonNull byte[] messageHash, @NonNull String strSignature) {
+    public static ECKey.ECDSASignature str2EthSignature(int network, @NonNull ECKey ecKey, @NonNull byte[] messageHash, @NonNull String strSignature, int chainId) {
         if (strSignature.length() != 128) {
             throw new RuntimeException("signature illegal");
         }
@@ -54,7 +54,12 @@ public class SignatureUtils {
         if (recId == -1) {
             throw new RuntimeException("Could not construct a recoverable key. This should never happen.");
         } else {
-            sig.v = (byte) (recId + 27);
+            if(chainId>0){
+                sig.v = (byte) (recId + chainId*2 +35);
+            }else{
+                sig.v = (byte) (recId + 27);
+            }
+
             return sig;
         }
     }

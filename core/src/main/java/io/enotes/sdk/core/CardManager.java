@@ -188,7 +188,7 @@ public class CardManager implements CardInterface {
     }
 
     @Override
-    public void getEthRawTransactionPair(Card card, String nonce, String estimateGas, String gasPrice, String toAddress, String value, byte[] data, Callback<EthRawTransaction.Pair> callback) {
+    public void getEthRawTransactionPair(Card card, String nonce, String estimateGas, String gasPrice, String toAddress, String value, byte[] data, int chainId, Callback<EthRawTransaction.Pair> callback) {
         new Thread(() -> {
             if (!cardProvider.isPresent() || cardProvider.getConnectedCard() == null || !cardProvider.getConnectedCard().getCurrencyPubKey().equals(card.getCurrencyPubKey())) {
                 if (!ENotesSDK.config.debugForEmulatorCard) {
@@ -206,7 +206,7 @@ public class CardManager implements CardInterface {
                 } else {
                     toValue = new BigInteger(value).subtract((new BigInteger(gasPrice).multiply(new BigInteger(estimateGas))));
                 }
-                EthRawTransaction.Pair rawTransaction = ethRawTransaction.getRawTransactionPair(card, cardProvider, ByteUtil.bigIntegerToBytes(new BigInteger(nonce)), ByteUtil.bigIntegerToBytes(new BigInteger(gasPrice)), ByteUtil.bigIntegerToBytes(new BigInteger(estimateGas)), ByteUtil.hexStringToBytes(toAddress), ByteUtil.bigIntegerToBytes(toValue), data);
+                EthRawTransaction.Pair rawTransaction = ethRawTransaction.getRawTransactionPair(card, cardProvider, ByteUtil.bigIntegerToBytes(new BigInteger(nonce)), ByteUtil.bigIntegerToBytes(new BigInteger(gasPrice)), ByteUtil.bigIntegerToBytes(new BigInteger(estimateGas)), ByteUtil.hexStringToBytes(toAddress), ByteUtil.bigIntegerToBytes(toValue), data, chainId);
                 handler.post(() -> {
                     callback.onCallBack(Resource.success(rawTransaction));
                 });

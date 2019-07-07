@@ -76,7 +76,8 @@ public class LuksoMainActivity extends AppCompatActivity {
                 String toAddress = "0x291b6374780b72b3a32cbb96b227df4bd9baf642";
                 String value = "1000000000000000000";
                 byte[] data = null;
-                mCardManager.getEthRawTransactionPair(mCard, nonce, estimateGas, gasPrice, toAddress, value, data, resource -> {
+                int chainId =42;
+                mCardManager.getEthRawTransactionPair(mCard, nonce, estimateGas, gasPrice, toAddress, value, data, chainId, resource -> {
                     if (resource.status == Status.SUCCESS) {
                         EthRawTransaction.Pair pair = resource.data;
 

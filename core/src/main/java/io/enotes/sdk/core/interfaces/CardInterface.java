@@ -2,7 +2,6 @@ package io.enotes.sdk.core.interfaces;
 
 
 import android.app.Activity;
-import android.bluetooth.BluetoothDevice;
 import android.nfc.Tag;
 import android.support.annotation.NonNull;
 
@@ -16,7 +15,6 @@ import io.enotes.sdk.repository.card.Command;
 import io.enotes.sdk.repository.card.CommandException;
 import io.enotes.sdk.repository.card.Commands;
 import io.enotes.sdk.repository.card.Reader;
-import io.enotes.sdk.repository.card.TLVBox;
 import io.enotes.sdk.repository.db.entity.Card;
 import io.enotes.sdk.utils.EthRawTransaction;
 
@@ -91,7 +89,7 @@ public interface CardInterface {
      *
      */
     void getEthRawTransaction(Card card, String nonce, String estimateGas, String gasPrice, String toAddress, String value, byte[] data, Callback<String> callback);
-    void getEthRawTransactionPair(Card card, String nonce, String estimateGas, String gasPrice, String toAddress, String value, byte[] data, Callback<EthRawTransaction.Pair> callback);
+    void getEthRawTransactionPair(Card card, String nonce, String estimateGas, String gasPrice, String toAddress, String value, byte[] data, int chainId, Callback<EthRawTransaction.Pair> callback);
 
 
     void getXrpRawTransaction(Card card,String toAddress, String amount, int sequence, String fee, long destinationTag, Callback<String> callback);

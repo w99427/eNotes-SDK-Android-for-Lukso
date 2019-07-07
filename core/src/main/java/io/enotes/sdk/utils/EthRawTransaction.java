@@ -29,7 +29,7 @@ public class EthRawTransaction {
                 LogUtils.i(TAG,"signature->"+signature);
                 ECKey ecKey = ECKey.fromPublicOnly(ByteUtil.hexStringToBytes(ByteUtil.toHexString(card.getEthECKey().getPubKey())));
                 Log.i(TAG, "address=" + ByteUtil.toHexString(ecKey.getAddress()));
-                ECKey.ECDSASignature ecdsaSignature = str2EthSignature(card.getCert().getNetWork(), ecKey, tx.getRawHash(), signature);
+                ECKey.ECDSASignature ecdsaSignature = str2EthSignature(card.getCert().getNetWork(), ecKey, tx.getRawHash(), signature, 0);
                 LogUtils.i(TAG,"R->"+ecdsaSignature.r.toString(16)+"\n S->"+ecdsaSignature.s.toString(16));
                 Transaction rawTx = new Transaction(nonce, gasPrice, gasLimit, receiveAddress, value, data, ecdsaSignature.r.toByteArray(), ecdsaSignature.s.toByteArray(), ecdsaSignature.v);
                 String hexString = ByteUtil.toHexString(rawTx.getEncoded());
@@ -43,7 +43,7 @@ public class EthRawTransaction {
     }
 
 
-    public Pair getRawTransactionPair(Card card, CardProvider cardProvider, byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) throws CommandException {
+    public Pair getRawTransactionPair(Card card, CardProvider cardProvider, byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, int chainId) throws CommandException {
         Log.i(TAG, "params=\n" + "nonce=" + ByteUtil.byteArrayToInt(nonce) + "\ngasPrice=" + ByteUtil.bytesToBigInteger(gasPrice).toString()
                 + "\ngasLimit=" + ByteUtil.byteArrayToInt(gasLimit) + "\nreceiveAddress=" + ByteUtil.toHexString(receiveAddress) +
                 "\nvalue=" + ByteUtil.bytesToBigInteger(value).toString());
@@ -57,7 +57,7 @@ public class EthRawTransaction {
                 LogUtils.i(TAG,"signature->"+signature);
                 ECKey ecKey = ECKey.fromPublicOnly(ByteUtil.hexStringToBytes(ByteUtil.toHexString(card.getEthECKey().getPubKey())));
                 Log.i(TAG, "address=" + ByteUtil.toHexString(ecKey.getAddress()));
-                ECKey.ECDSASignature ecdsaSignature = str2EthSignature(card.getCert().getNetWork(), ecKey, tx.getRawHash(), signature);
+                ECKey.ECDSASignature ecdsaSignature = str2EthSignature(card.getCert().getNetWork(), ecKey, tx.getRawHash(), signature, chainId);
                 LogUtils.i(TAG,"R->"+ecdsaSignature.r.toString(16)+"\n S->"+ecdsaSignature.s.toString(16));
                 pair.setR(ecdsaSignature.r.toString(16));
                 pair.setS(ecdsaSignature.s.toString(16));
