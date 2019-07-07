@@ -3,7 +3,7 @@ package io.enotes.sdk.repository.card;
 import android.bluetooth.BluetoothDevice;
 import android.nfc.Tag;
 
-import io.enotes.sdk.repository.api.entity.response.simulate.BluetoothEntity;
+import io.enotes.sdk.repository.db.entity.BluetoothEntity;
 
 
 /**

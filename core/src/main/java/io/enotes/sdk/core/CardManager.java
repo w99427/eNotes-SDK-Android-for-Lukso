@@ -9,28 +9,24 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 
-import org.bitcoinj.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.List;
 
 import io.enotes.sdk.constant.ErrorCode;
 import io.enotes.sdk.constant.Status;
 import io.enotes.sdk.core.interfaces.CardInterface;
-import io.enotes.sdk.repository.api.entity.EntUtxoEntity;
-import io.enotes.sdk.repository.api.entity.response.simulate.BluetoothEntity;
 import io.enotes.sdk.repository.base.Resource;
 import io.enotes.sdk.repository.card.Command;
 import io.enotes.sdk.repository.card.CommandException;
 import io.enotes.sdk.repository.card.Commands;
 import io.enotes.sdk.repository.card.Reader;
 import io.enotes.sdk.repository.card.TLVBox;
+import io.enotes.sdk.repository.db.entity.BluetoothEntity;
 import io.enotes.sdk.repository.db.entity.Card;
 import io.enotes.sdk.repository.provider.CardProvider;
-import io.enotes.sdk.utils.BtcRawTransaction;
 import io.enotes.sdk.utils.EthRawTransaction;
 import io.enotes.sdk.utils.XrpRawTransaction;
 import io.enotes.sdk.viewmodel.CardViewModel;
@@ -127,32 +123,7 @@ public class CardManager implements CardInterface {
         return cardProvider.isPresent();
     }
 
-    @Override
-    public void getBtcRawTransaction(Card card, String fees, String toAddress, List<EntUtxoEntity> unSpends, String omniValue, @NonNull Callback<String> callback) {
-        new Thread(() -> {
-            if (!cardProvider.isPresent() || cardProvider.getConnectedCard() == null || !cardProvider.getConnectedCard().getCurrencyPubKey().equals(card.getCurrencyPubKey())) {
-                if (!ENotesSDK.config.debugForEmulatorCard) {
-                    handler.post(() -> {
-                        callback.onCallBack(Resource.error(ErrorCode.NOT_FIND_RIGHT_CARD, "not find right card when withdraw"));
-                    });
-                    return;
-                }
-            }
-            BtcRawTransaction btcRawTransaction = new BtcRawTransaction();
-            try {
-                Transaction transaction = btcRawTransaction.createRawTransaction(card, cardProvider, Long.valueOf(fees), toAddress, 0, "", unSpends, omniValue);
-                handler.post(() -> {
-                    callback.onCallBack(Resource.success(ByteUtil.toHexString(transaction.bitcoinSerialize())));
-                });
-            } catch (CommandException e) {
-                e.printStackTrace();
-                handler.post(() -> {
-                    callback.onCallBack(Resource.error(e.getCode(), e.getMessage()));
-                });
-            }
-        }).start();
-
-    }
+   
 
     @Override
     public void getEthRawTransaction(Card card, String nonce, String estimateGas, String gasPrice, String toAddress, String value, byte[] data, Callback<String> callback) {

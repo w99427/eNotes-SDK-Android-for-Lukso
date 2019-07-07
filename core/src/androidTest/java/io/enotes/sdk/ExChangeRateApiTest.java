@@ -9,7 +9,6 @@ import android.util.Log;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import io.enotes.sdk.constant.Constant;
@@ -26,7 +25,6 @@ import io.enotes.sdk.repository.api.entity.EntNonceEntity;
 import io.enotes.sdk.repository.api.entity.EntSendTxEntity;
 import io.enotes.sdk.repository.api.entity.EntUtxoEntity;
 import io.enotes.sdk.repository.base.Resource;
-import io.enotes.sdk.repository.provider.ApiProvider;
 import io.enotes.sdk.repository.provider.api.ExchangeRateApiProvider;
 
 import static org.junit.Assert.assertNotNull;

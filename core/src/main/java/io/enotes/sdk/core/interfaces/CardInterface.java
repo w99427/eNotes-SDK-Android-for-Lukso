@@ -9,12 +9,11 @@ import java.util.List;
 
 import io.enotes.sdk.core.Callback;
 import io.enotes.sdk.core.EntSignature;
-import io.enotes.sdk.repository.api.entity.EntUtxoEntity;
-import io.enotes.sdk.repository.api.entity.response.simulate.BluetoothEntity;
 import io.enotes.sdk.repository.card.Command;
 import io.enotes.sdk.repository.card.CommandException;
 import io.enotes.sdk.repository.card.Commands;
 import io.enotes.sdk.repository.card.Reader;
+import io.enotes.sdk.repository.db.entity.BluetoothEntity;
 import io.enotes.sdk.repository.db.entity.Card;
 import io.enotes.sdk.utils.EthRawTransaction;
 
@@ -82,7 +81,6 @@ public interface CardInterface {
      * get btc raw transaction
      *
      */
-    void getBtcRawTransaction(Card card, String fees, String toAddress, List<EntUtxoEntity> unSpends, String omniValue, Callback<String> callback);
 
     /**
      * get eth raw transaction

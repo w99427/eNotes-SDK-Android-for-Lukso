@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MediatorLiveData;
 import android.arch.lifecycle.MutableLiveData;
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -18,23 +17,13 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.enotes.sdk.BuildConfig;
 import io.enotes.sdk.constant.Constant;
 import io.enotes.sdk.constant.ErrorCode;
 import io.enotes.sdk.constant.Status;
 import io.enotes.sdk.core.ENotesSDK;
-import io.enotes.sdk.repository.ProviderFactory;
-import io.enotes.sdk.repository.api.ApiResponse;
-import io.enotes.sdk.repository.api.RetrofitFactory;
-import io.enotes.sdk.repository.api.SimulateCardService;
-import io.enotes.sdk.repository.api.entity.ResponseEntity;
-import io.enotes.sdk.repository.api.entity.response.simulate.ApduEntity;
-import io.enotes.sdk.repository.api.entity.response.simulate.BluetoothEntity;
 import io.enotes.sdk.repository.base.Resource;
 import io.enotes.sdk.repository.db.entity.Card;
 import io.enotes.sdk.repository.db.entity.Cert;
-import io.enotes.sdk.repository.db.entity.Mfr;
-import io.enotes.sdk.repository.provider.ApiProvider;
 import io.enotes.sdk.utils.CardUtils;
 import io.enotes.sdk.utils.LogUtils;
 import io.enotes.sdk.utils.ReaderUtils;
@@ -43,17 +32,13 @@ import io.reactivex.schedulers.Schedulers;
 
 import static io.enotes.sdk.constant.Constant.BlockChain.ETHEREUM;
 import static io.enotes.sdk.constant.ErrorCode.BLUETOOTH_DISCONNECT;
-import static io.enotes.sdk.constant.ErrorCode.NOT_FIND_CARD;
 import static io.enotes.sdk.constant.Status.BLUETOOTH_PARSING;
 import static io.enotes.sdk.constant.Status.BLUETOOTH_SCAN_FINISH;
 import static io.enotes.sdk.constant.Status.ERROR;
 import static io.enotes.sdk.constant.Status.NFC_CONNECTED;
 import static io.enotes.sdk.constant.Status.SUCCESS;
-import static io.enotes.sdk.repository.db.entity.Card.STATUS_SAFE;
-import static io.enotes.sdk.repository.db.entity.Card.STATUS_UNSAFE;
 import static io.enotes.sdk.utils.SignatureUtils.blockChainPrvChallenge;
 import static io.enotes.sdk.utils.SignatureUtils.devicePrvChallenge;
-import static io.enotes.sdk.utils.SignatureUtils.verifySignatureTwiceHash;
 
 
 /**
@@ -75,7 +60,6 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
     private MediatorLiveData<Resource<Reader>> mReader = new MediatorLiveData<>();
     private Handler handler = new Handler();
     private Card connectedCard;
-    private SimulateCardService simulateCardService;
     private long cardIdForSimulate;
 
     public static class Builder {
@@ -243,36 +227,6 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
     // only for ble
     @Override
     public void startScan() {
-        if (ENotesSDK.config.debugForEmulatorCard) {
-            simulateCardService = RetrofitFactory.getSimulateCardService(mContext);
-            mReader.addSource(simulateCardService.getBluetoothList(), (responseEntityApiResponse -> {
-                if (responseEntityApiResponse.isSuccessful()) {
-                    if (responseEntityApiResponse.body.getCode() == 0 && responseEntityApiResponse.body.getData() != null) {
-                        List<BluetoothEntity> bList = responseEntityApiResponse.body.getData();
-                        new Thread(() -> {
-                            for (BluetoothEntity entity : bList) {
-                                Reader reader = new Reader();
-                                reader.setDeviceInfo(entity);
-                                handler.post(() -> {
-                                    mReader.postValue(Resource.success(reader));
-                                });
-                                try {
-                                    Thread.sleep(200);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                            handler.post(() -> {
-                                mReader.postValue(Resource.bluetoothScanFinish(""));
-                            });
-                        }).start();
-                    }
-                } else {
-                    mReader.postValue(Resource.error(ErrorCode.NET_ERROR, "can not find server"));
-                }
-            }));
-            return;
-        }
 //        mReader.postValue(Resource.start("start scan"));
         List<ScannerReader> scannerReaders = mScannerReaders;
         for (ScannerReader scannerReader : scannerReaders) {
@@ -342,17 +296,11 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
                 if (scannerReader.mCardReader instanceof BleCardReader && reader.getDeviceInfo() != null) {
 
                     new Thread(() -> {
-                        try {
-                            ApiResponse<ResponseEntity<BluetoothEntity>> cardEntity = ApiProvider.getValue(simulateCardService.connectBluetooth(reader.getDeviceInfo().getAddress()));
-                            if (cardEntity.isSuccessful() && cardEntity.body.getCode() == 0) {
-                                cardIdForSimulate = cardEntity.body.getData().getId();
-                                mCurrentScannerReader = scannerReader;
-                                detectCard();
-                                parseCardFinish();
-                            }
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+
+                        mCurrentScannerReader = scannerReader;
+                        detectCard();
+                        parseCardFinish();
+
                     }).start();
 
 
@@ -384,19 +332,6 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
 
     @NonNull
     public TLVBox transceive2TLV(@NonNull Command command) throws CommandException {
-        if (ENotesSDK.config.debugForEmulatorCard) {
-            try {
-                ApiResponse<ResponseEntity<ApduEntity>> entity = ApiProvider.getValue(simulateCardService.transceiveApdu(cardIdForSimulate, command.getCmdStr()));
-                if (entity.isSuccessful() && entity.body.getCode() == 0) {
-                    String apduString = entity.body.getData().getResult();
-                    byte[] bytes = ByteUtil.hexStringToBytes(apduString.substring(0, apduString.length() - 4));
-                    return TLVBox.parse(bytes, 0, bytes.length);
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            throw new CommandException(ErrorCode.NFC_DISCONNECTED, "tag_connection_lost");
-        }
         ScannerReader scannerReader = mCurrentScannerReader;
         if (scannerReader != null) {
             TLVBox transceive = scannerReader.mCardReader.transceive2TLV(command);
@@ -559,35 +494,6 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
         return cert;
     }
 
-    /**
-     * verify cert by contract public key
-     *
-     * @param cert
-     * @throws CommandException
-     */
-    private void verifyCert(Cert cert) throws CommandException {
-        LogUtils.i(TAG, "verify cert start");
-        boolean testCard;
-        if (cert.getSerialNumber() != null && (cert.getSerialNumber().toLowerCase().startsWith("test-") || cert.getSerialNumber().toLowerCase().startsWith("demo-"))) {
-            testCard = true;
-        } else {
-            testCard = false;
-        }
-        Mfr mfr = ProviderFactory.getInstance(mContext).getApiProvider()
-                .callCertPubKey(testCard ? Constant.ContractAddress.ABI_KOVAN_ADDRESS : Constant.ContractAddress.ABI_ADDRESS, cert.getVendorName(), cert.getBatch(), testCard);
-        if (mfr == null) {
-            throw new CommandException(ErrorCode.CALL_CERT_PUB_KEY_ERROR, "call pub key");
-        }
-        LogUtils.i(TAG, "call_publicKey: " + mfr.getPublicKey());
-        try {
-            if (!verifySignatureTwiceHash(ByteUtil.hexStringToBytes(mfr.getPublicKey()), cert.getTbsCertificate(), cert.getR(), cert.getS())) {
-                throw new CommandException(ErrorCode.INVALID_CARD, "Invalid cert _ verify manufacture cert fail");
-            }
-        } catch (Exception e) {
-            throw new CommandException(ErrorCode.INVALID_CARD, "Invalid cert _ verify manufacture cert fail");
-        }
-        LogUtils.i(TAG, "verify cert success");
-    }
 
     /**
      * verify device private key
@@ -658,7 +564,7 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
         LogUtils.d(TAG, "read status");
         String result = transceive2TLV(Commands.getTxSignCounter()).getStringValue(Commands.TLVTag.Transaction_Signature_Counter);
         if (result != null) {
-            return new BigInteger(result,16).intValue();
+            return new BigInteger(result, 16).intValue();
         }
         throw new CommandException(ErrorCode.INVALID_CARD, "Fail to read status");
     }

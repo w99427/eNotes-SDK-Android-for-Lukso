@@ -24,7 +24,6 @@ import io.enotes.sdk.repository.api.entity.EntSendTxEntity;
 import io.enotes.sdk.repository.api.entity.EntTransactionEntity;
 import io.enotes.sdk.repository.api.entity.EntUtxoEntity;
 import io.enotes.sdk.repository.base.Resource;
-import io.enotes.sdk.repository.provider.ApiProvider;
 
 import android.support.test.runner.AndroidJUnit4;
 

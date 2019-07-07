@@ -1,10 +1,8 @@
 package io.enotes.sdk.utils;
 
-import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringDef;
-import android.text.TextUtils;
 
 import com.google.common.math.LongMath;
 
@@ -16,8 +14,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-
-import io.enotes.sdk.constant.Constant;
 import io.enotes.sdk.repository.db.entity.Card;
 
 import static io.enotes.sdk.constant.Constant.BlockChain.BITCOIN;
@@ -355,35 +351,5 @@ public class CardUtils {
         }
     }
 
-    public static String getChain(Card card) {
-        String chain = "";
-        int netWork = card.getCert().getNetWork();
-        if (CardUtils.isBTC(card.getCert().getBlockChain())) {
-            if (netWork == 0) {
-                chain = "Bitcoin";
-            } else if (netWork == 1) {
-                chain = "Bitcoin Testnet";
-            } else {
-                chain = "not_support_chain";
-            }
-        } else {
-            if (TextUtils.isEmpty(card.getCert().getTokenAddress())) {
-                if (netWork == 1) {
-                    chain = "Ethereum";
-                } else if (netWork == 3) {
-                    chain = "Ethereum Ropsten (Testnet)";
-                } else if (netWork == 4) {
-                    chain = "Ethereum Rinkeby (Testnet)";
-                } else if (netWork == 42) {
-                    chain = "Ethereum Kovan (Testnet)";
-                } else {
-                    chain = "not_support_chain";
-                }
-            } else {
 
-            }
-
-        }
-        return chain;
-    }
 }
