@@ -17,10 +17,7 @@ import java.math.BigInteger;
 import io.enotes.sdk.repository.db.entity.Card;
 
 import static io.enotes.sdk.constant.Constant.BlockChain.BITCOIN;
-import static io.enotes.sdk.constant.Constant.BlockChain.BITCOIN_CASH;
-import static io.enotes.sdk.constant.Constant.BlockChain.CYBEX;
 import static io.enotes.sdk.constant.Constant.BlockChain.ETHEREUM;
-import static io.enotes.sdk.constant.Constant.BlockChain.RIPPLE;
 import static java.lang.Integer.parseInt;
 import static org.bitcoinj.core.Coin.COIN;
 import static org.bitcoinj.core.Coin.MICROCOIN;
@@ -31,7 +28,7 @@ public class CardUtils {
 
 
     @Retention(RetentionPolicy.SOURCE)
-    @StringDef(value = {BITCOIN, ETHEREUM, BITCOIN_CASH})
+    @StringDef(value = {BITCOIN, ETHEREUM})
     @interface BlockChain {
     }
 
@@ -45,15 +42,6 @@ public class CardUtils {
     private static final BigDecimal ETH_WEI = new BigDecimal("1000000000000000000");
 
 
-    /**
-     * Check whether it's BTC.
-     *
-     * @param blockChain
-     * @return
-     */
-    public static boolean isBTC(String blockChain) {
-        return BITCOIN.equals(blockChain) || BITCOIN_CASH.equals(blockChain);
-    }
 
     /**
      * Check whether it's ETH.
@@ -79,17 +67,9 @@ public class CardUtils {
                 return card.getBitcoinMainAddress();
             else
                 return card.getBitcoinTest3Address();
-        } else if (blockChain.equals(BITCOIN_CASH)) {
-            if (card.getCert().getNetWork() == 0)
-                return card.getBitcoinCashMainAddress();
-            else
-                return card.getBitcoinCashTest3Address();
         } else if (blockChain.equals(ETHEREUM))
             return card.getEthTxAddress();
-        else if (blockChain.equals(RIPPLE))
-            return card.getRippleAddress();
-        else if (blockChain.equals(CYBEX))
-            return card.getEthTxAddress();
+
         return null;
     }
 
@@ -115,75 +95,6 @@ public class CardUtils {
         return ret.toString();
     }
 
-    /**
-     * Convert common to smallest unit of the digit currency,
-     * such as bitcoin to satoshi, eth to wei.
-     *
-     * @param value
-     * @return
-     * @throws IllegalArgumentException if {@code value} does not contain a valid string representation
-     *                                  of a big decimal.
-     */
-    public static BigInteger main2SmallestUnit(String value, @BlockChain String blockChain) {
-        if (blockChain.equals(BITCOIN_CASH) || blockChain.equals(BITCOIN))
-            return bitcoin2Satoshi(value);
-        else if (blockChain.equals(ETHEREUM))
-            return eth2wei(value);
-        throw new IllegalArgumentException("unsupported code type:" + blockChain);
-    }
-
-    /**
-     * Convert smallest to common unit of the digit currency,
-     * such as satoshi to bitcoin, wei to eth.
-     *
-     * @param value
-     * @param blockChain
-     * @return
-     */
-    public static BigDecimal smallestUnit2Main(BigInteger value, @BlockChain String blockChain) {
-        if (blockChain.equals(BITCOIN_CASH) || blockChain.equals(BITCOIN))
-            return satoshi2bitcoin(value);
-        else if (blockChain.equals(ETHEREUM))
-            return wei2eth(value);
-        throw new IllegalArgumentException("unsupported code type:" + blockChain);
-    }
-
-    /**
-     * Convert smallest to common unit of the digit currency,
-     * such as satoshi to bitcoin, wei to eth.
-     *
-     * @param value
-     * @param blockChain
-     * @return
-     * @throws IllegalArgumentException if {@code value} does not contain a valid string representation
-     *                                  of a big decimal.
-     */
-    public static BigDecimal smallestUnit2Main(String value, @BlockChain String blockChain) {
-        if (blockChain.equals(BITCOIN_CASH) || blockChain.equals(BITCOIN))
-            return satoshi2bitcoin(value);
-        else if (blockChain.equals(ETHEREUM))
-            return wei2eth(value);
-        throw new IllegalArgumentException("unsupported code type:" + blockChain);
-    }
-
-    /**
-     * Convert bitcoin to satoshi.
-     * To get the value {@link BigInteger#longValue()}
-     *
-     * @param bitcoinValue
-     * @return
-     * @throws IllegalArgumentException if {@code bitcoinValue} does not contain a valid string representation
-     *                                  of a big decimal.
-     */
-    public static BigInteger bitcoin2Satoshi(String bitcoinValue) {
-        if (bitcoinValue == null || bitcoinValue.isEmpty())
-            return BigInteger.ZERO;
-        try {
-            return new BigDecimal(bitcoinValue).multiply(BITCOIN_SATOSHI).toBigInteger();
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
 
     /**
      * Convert satoshi to bitcoin.

@@ -5,12 +5,8 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.IntDef;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.ripple.core.coretypes.AccountID;
-
-import org.bitcoinj.core.ECKey;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.ethereum.util.ByteUtil;
@@ -20,9 +16,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.math.BigInteger;
 
 import io.enotes.sdk.utils.CardUtils;
-import io.enotes.sdk.utils.bch.MoneyNetwork;
-import io.enotes.sdk.utils.bch.bitcoincash.BitcoinCashAddressFormatter;
-import io.enotes.sdk.utils.bch.bitcoincash.BitcoinCashAddressType;
 
 
 @Entity(tableName = "card")
@@ -193,34 +186,5 @@ public class Card {
         return bitCoinECKey.toAddress(TestNet3Params.get()).toBase58();
     }
 
-    @Nullable
-    public String getBitcoinCashMainAddress() {
-        getBitCoinECKey();
-        if (bitCoinECKey == null) {
-            return null;
-        }
-        return BitcoinCashAddressFormatter.toCashAddress(BitcoinCashAddressType.P2PKH, bitCoinECKey.getPubKeyHash(),
-                MoneyNetwork.MAIN);
-    }
 
-    @Nullable
-    public String getBitcoinCashTest3Address() {
-        getBitCoinECKey();
-        if (bitCoinECKey == null) {
-            return null;
-        }
-
-        return BitcoinCashAddressFormatter.toCashAddress(BitcoinCashAddressType.P2PKH, bitCoinECKey.getPubKeyHash(),
-                MoneyNetwork.TEST);
-    }
-
-    @NonNull
-    public String getRippleAddress() {
-        getBitCoinECKey();
-        if (bitCoinECKey == null) {
-            return null;
-        }
-        byte[] encoded = bitCoinECKey.getPubKeyPoint().getEncoded(true);
-        return AccountID.fromAddressBytes(ECKey.fromPublicOnly(encoded).getPubKeyHash()).toString();
-    }
 }

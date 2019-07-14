@@ -90,7 +90,6 @@ public interface CardInterface {
     void getEthRawTransactionPair(Card card, String nonce, String estimateGas, String gasPrice, String toAddress, String value, byte[] data, int chainId, Callback<EthRawTransaction.Pair> callback);
 
 
-    void getXrpRawTransaction(Card card,String toAddress, String amount, int sequence, String fee, long destinationTag, Callback<String> callback);
     /**
      * Send Command with raw ISO-DEP data to the card and receive the response.
      * The response should be trimmed if it a valid response {@link Commands#isSuccessResponse(String)}

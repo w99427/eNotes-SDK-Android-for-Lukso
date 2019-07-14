@@ -28,7 +28,6 @@ import io.enotes.sdk.repository.db.entity.BluetoothEntity;
 import io.enotes.sdk.repository.db.entity.Card;
 import io.enotes.sdk.repository.provider.CardProvider;
 import io.enotes.sdk.utils.EthRawTransaction;
-import io.enotes.sdk.utils.XrpRawTransaction;
 import io.enotes.sdk.viewmodel.CardViewModel;
 
 public class CardManager implements CardInterface {
@@ -123,7 +122,7 @@ public class CardManager implements CardInterface {
         return cardProvider.isPresent();
     }
 
-   
+
 
     @Override
     public void getEthRawTransaction(Card card, String nonce, String estimateGas, String gasPrice, String toAddress, String value, byte[] data, Callback<String> callback) {
@@ -190,43 +189,6 @@ public class CardManager implements CardInterface {
         }).start();
     }
 
-    @Override
-    public void getXrpRawTransaction(Card card, String toAddress, String amount, int sequence, String fee, long destinationTag, Callback<String> callback) {
-        new Thread(() -> {
-            if (!cardProvider.isPresent() || cardProvider.getConnectedCard() == null || !cardProvider.getConnectedCard().getCurrencyPubKey().equals(card.getCurrencyPubKey())) {
-                if (!ENotesSDK.config.debugForEmulatorCard) {
-                    handler.post(() -> {
-                        callback.onCallBack(Resource.error(ErrorCode.NOT_FIND_RIGHT_CARD, "not find right card when withdraw"));
-                    });
-                    return;
-                }
-            }
-            XrpRawTransaction xrpRawTransaction = new XrpRawTransaction();
-            BigInteger toValue;
-            if (amount.equals("0")) {
-                toValue = new BigInteger(amount);
-            } else {
-                toValue = (new BigInteger(amount).subtract((new BigInteger("20000000"))).subtract(new BigInteger(fee)));// ripple account must remain 20xrp for balance
-            }
-            if (toValue.compareTo(new BigInteger("0")) <= 0) {
-                handler.post(() -> {
-                    callback.onCallBack(Resource.error(ErrorCode.NET_ERROR, "No balance available"));
-                });
-                return;
-            }
-            try {
-                String rawTransaction = xrpRawTransaction.createRawTransaction(card, cardProvider, toAddress, toValue.toString(), sequence, fee, destinationTag);
-                handler.post(() -> {
-                    callback.onCallBack(Resource.success(rawTransaction));
-                });
-            } catch (CommandException e) {
-                e.printStackTrace();
-                handler.post(() -> {
-                    callback.onCallBack(Resource.error(e.getCode(), e.getMessage()));
-                });
-            }
-        }).start();
-    }
 
     @Override
     public String transmitApdu(@NonNull Command command) throws CommandException {
