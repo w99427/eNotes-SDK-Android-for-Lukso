@@ -36,14 +36,6 @@ public class Resource<T> {
         return new Resource<>(Status.SUCCESS, ErrorCode.NOT_ERROR, data, message);
     }
 
-    public static Resource bluetoothParsingCard(String message) {
-        return new Resource(Status.BLUETOOTH_PARSING, ErrorCode.NOT_ERROR, null, message);
-    }
-
-    public static Resource bluetoothScanFinish(String message){
-        return new Resource(Status.BLUETOOTH_SCAN_FINISH, ErrorCode.NOT_ERROR, null, message);
-    }
-
     public static Resource nfcConnected(String message){
         return new Resource(Status.NFC_CONNECTED, ErrorCode.NOT_ERROR, null, message);
     }

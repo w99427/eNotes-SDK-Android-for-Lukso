@@ -1,24 +1,12 @@
 package io.enotes.sdk.repository.db.entity;
 
-import android.arch.persistence.room.Embedded;
-import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
-import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.IntDef;
-import android.support.annotation.Nullable;
-
-import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.params.TestNet3Params;
-import org.ethereum.util.ByteUtil;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.math.BigInteger;
 
-import io.enotes.sdk.utils.CardUtils;
 
-
-@Entity(tableName = "card")
 public class Card {
     /**
      * Tx signed times = 0
@@ -34,10 +22,8 @@ public class Card {
     @interface Status {
     }
 
-    @PrimaryKey(autoGenerate = true)
     private long id;
 
-    @Embedded
     private Cert cert;
     private long createTime;
     private long updateTime;
@@ -50,10 +36,6 @@ public class Card {
     //1.2.0
     private String account;
 
-    @Ignore
-    private org.bitcoinj.core.ECKey bitCoinECKey;
-    @Ignore
-    private org.ethereum.crypto.ECKey ethECKey;
 
     public long getId() {
         return id;
@@ -135,56 +117,6 @@ public class Card {
         this.account = account;
     }
 
-
-    public org.bitcoinj.core.ECKey getBitCoinECKey() {
-        if (bitCoinECKey == null && currencyPubKey != null) {
-            try {
-                bitCoinECKey = org.bitcoinj.core.ECKey.fromPublicOnly(ByteUtil.hexStringToBytes(currencyPubKey));
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            }
-        }
-        return bitCoinECKey;
-    }
-
-
-    public org.ethereum.crypto.ECKey getEthECKey() {
-        if (ethECKey == null && currencyPubKey != null) {
-            try {
-                ethECKey = org.ethereum.crypto.ECKey.fromPublicOnly(ByteUtil.hexStringToBytes(currencyPubKey));
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            }
-        }
-        return ethECKey;
-    }
-
-    @Nullable
-    public String getEthTxAddress() {
-        getEthECKey();
-        if (ethECKey == null) {
-            return null;
-        }
-        return CardUtils.getEthEncodeAddress(ByteUtil.toHexString(ethECKey.getAddress()));
-    }
-
-    @Nullable
-    public String getBitcoinMainAddress() {
-        getBitCoinECKey();
-        if (bitCoinECKey == null) {
-            return null;
-        }
-        return bitCoinECKey.toAddress(MainNetParams.get()).toBase58();
-    }
-
-    @Nullable
-    public String getBitcoinTest3Address() {
-        getBitCoinECKey();
-        if (bitCoinECKey == null) {
-            return null;
-        }
-        return bitCoinECKey.toAddress(TestNet3Params.get()).toBase58();
-    }
 
 
 }

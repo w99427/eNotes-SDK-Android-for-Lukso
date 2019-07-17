@@ -2,7 +2,6 @@ package io.enotes.sdk.core;
 
 import android.app.Activity;
 import android.arch.lifecycle.ViewModelProviders;
-import android.nfc.Tag;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -13,21 +12,16 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 import io.enotes.sdk.constant.ErrorCode;
 import io.enotes.sdk.constant.Status;
 import io.enotes.sdk.core.interfaces.CardInterface;
-import io.enotes.sdk.repository.base.Resource;
 import io.enotes.sdk.repository.card.Command;
 import io.enotes.sdk.repository.card.CommandException;
 import io.enotes.sdk.repository.card.Commands;
-import io.enotes.sdk.repository.card.Reader;
 import io.enotes.sdk.repository.card.TLVBox;
-import io.enotes.sdk.repository.db.entity.BluetoothEntity;
 import io.enotes.sdk.repository.db.entity.Card;
 import io.enotes.sdk.repository.provider.CardProvider;
-import io.enotes.sdk.utils.EthRawTransaction;
 import io.enotes.sdk.viewmodel.CardViewModel;
 
 public class CardManager implements CardInterface {
@@ -35,7 +29,6 @@ public class CardManager implements CardInterface {
     private @NonNull
     FragmentActivity fragmentActivity;
     private Callback readCardCallback;
-    private Callback scanCardCallback;
     private Handler handler;
 
     public CardManager(FragmentActivity fragmentActivity) {
@@ -64,37 +57,8 @@ public class CardManager implements CardInterface {
                 }
             }));
 
-            cardProvider.getReader().observe(fragmentActivity, (resource -> {
-                if (scanCardCallback != null)
-                    scanCardCallback.onCallBack(resource);
-            }));
+
         }
-    }
-
-    @Override
-    public void selectAid(String aid) {
-        cardProvider.setTargetAID(aid);
-    }
-
-    @Override
-    public void startBluetoothScan(@NonNull Callback<Reader> callback) {
-        cardProvider.startScan();
-        scanCardCallback = callback;
-    }
-
-    @Override
-    public void stopBluetoothScan(Callback callback) {
-        cardProvider.destroyScanner();
-    }
-
-    @Override
-    public void connectBluetooth(BluetoothEntity bluetoothDevice) {
-        cardProvider.parseAndConnect(new Reader().setDeviceInfo(bluetoothDevice));
-    }
-
-    @Override
-    public void disconnectBluetooth() {
-        cardProvider.disconnectCard();
     }
 
     @Override
@@ -112,82 +76,7 @@ public class CardManager implements CardInterface {
         readCardCallback = cardCallback;
     }
 
-    @Override
-    public boolean isConnected() {
-        return cardProvider.isConnected();
-    }
 
-    @Override
-    public boolean isPresent() {
-        return cardProvider.isPresent();
-    }
-
-
-
-    @Override
-    public void getEthRawTransaction(Card card, String nonce, String estimateGas, String gasPrice, String toAddress, String value, byte[] data, Callback<String> callback) {
-        new Thread(() -> {
-            if (!cardProvider.isPresent() || cardProvider.getConnectedCard() == null || !cardProvider.getConnectedCard().getCurrencyPubKey().equals(card.getCurrencyPubKey())) {
-                if (!ENotesSDK.config.debugForEmulatorCard) {
-                    handler.post(() -> {
-                        callback.onCallBack(Resource.error(ErrorCode.NOT_FIND_RIGHT_CARD, "not find right card when withdraw"));
-                    });
-                    return;
-                }
-            }
-            EthRawTransaction ethRawTransaction = new EthRawTransaction();
-            try {
-                BigInteger toValue;
-                if (value.equals("0")) {
-                    toValue = new BigInteger(value);
-                } else {
-                    toValue = new BigInteger(value).subtract((new BigInteger(gasPrice).multiply(new BigInteger(estimateGas))));
-                }
-                String rawTransaction = ethRawTransaction.getRawTransaction(card, cardProvider, ByteUtil.bigIntegerToBytes(new BigInteger(nonce)), ByteUtil.bigIntegerToBytes(new BigInteger(gasPrice)), ByteUtil.bigIntegerToBytes(new BigInteger(estimateGas)), ByteUtil.hexStringToBytes(toAddress), ByteUtil.bigIntegerToBytes(toValue), data);
-                handler.post(() -> {
-                    callback.onCallBack(Resource.success(rawTransaction));
-                });
-            } catch (CommandException e) {
-                e.printStackTrace();
-                handler.post(() -> {
-                    callback.onCallBack(Resource.error(e.getCode(), e.getMessage()));
-                });
-            }
-        }).start();
-
-    }
-
-    @Override
-    public void getEthRawTransactionPair(Card card, String nonce, String estimateGas, String gasPrice, String toAddress, String value, byte[] data, int chainId, Callback<EthRawTransaction.Pair> callback) {
-        new Thread(() -> {
-            if (!cardProvider.isPresent() || cardProvider.getConnectedCard() == null || !cardProvider.getConnectedCard().getCurrencyPubKey().equals(card.getCurrencyPubKey())) {
-                if (!ENotesSDK.config.debugForEmulatorCard) {
-                    handler.post(() -> {
-                        callback.onCallBack(Resource.error(ErrorCode.NOT_FIND_RIGHT_CARD, "not find right card when withdraw"));
-                    });
-                    return;
-                }
-            }
-            EthRawTransaction ethRawTransaction = new EthRawTransaction();
-            try {
-                BigInteger toValue;
-                if (value.equals("0")) {
-                    toValue = new BigInteger(value);
-                } else {
-                    toValue = new BigInteger(value).subtract((new BigInteger(gasPrice).multiply(new BigInteger(estimateGas))));
-                }
-                EthRawTransaction.Pair rawTransaction = ethRawTransaction.getRawTransactionPair(card, cardProvider, ByteUtil.bigIntegerToBytes(new BigInteger(nonce)), ByteUtil.bigIntegerToBytes(new BigInteger(gasPrice)), ByteUtil.bigIntegerToBytes(new BigInteger(estimateGas)), ByteUtil.hexStringToBytes(toAddress), ByteUtil.bigIntegerToBytes(toValue), data, chainId);
-                handler.post(() -> {
-                    callback.onCallBack(Resource.success(rawTransaction));
-                });
-            } catch (CommandException e) {
-                e.printStackTrace();
-                handler.post(() -> {
-                    callback.onCallBack(Resource.error(e.getCode(), e.getMessage()));
-                });
-            }
-        }).start();
-    }
 
 
     @Override
@@ -196,62 +85,7 @@ public class CardManager implements CardInterface {
     }
 
     @Override
-    public void parseNfcTag(Tag tag) {
-        cardProvider.parseAndConnect(new Reader().setTag(tag));
-    }
-
-    @Override
-    public int getTransactionPinStatus() throws CommandException {
-        byte[] bytes = ByteUtil.hexStringToBytes(transmitApdu(Commands.getFreezeStatus()));
-        TLVBox tlvBox = TLVBox.parse(bytes, 0, bytes.length);
-        return new BigInteger(tlvBox.getStringValue(Commands.TLVTag.Transaction_Freeze_Status), 16).intValue();
-    }
-
-    @Override
-    public int getDisableTransactionPinTries() throws CommandException {
-        byte[] bytes = ByteUtil.hexStringToBytes(transmitApdu(Commands.getReadUnfreezeTries()));
-        TLVBox tlvBox = TLVBox.parse(bytes, 0, bytes.length);
-        return new BigInteger(tlvBox.getStringValue(Commands.TLVTag.Transaction_Freeze_Tries), 16).intValue();
-    }
-
-    @Override
-    public boolean enableTransactionPin(String pin) throws CommandException {
-        TLVBox tlvBox = new TLVBox();
-        tlvBox.putBytesValue(Commands.TLVTag.Transaction_Freeze_Pin, pin.getBytes());
-        transmitApdu(Commands.freezeTx(tlvBox.serialize()));
-        return true;
-    }
-
-    @Override
-    public boolean disableTransactionPin(String pin) throws CommandException {
-        TLVBox tlvBox = new TLVBox();
-        tlvBox.putBytesValue(Commands.TLVTag.Transaction_Freeze_Pin, pin.getBytes());
-        transmitApdu(Commands.unFreezeTx(tlvBox.serialize()));
-        return true;
-    }
-
-    @Override
-    public boolean verifyTransactionPin(String pin) throws CommandException {
-        TLVBox tlvBox = new TLVBox();
-        tlvBox.putBytesValue(Commands.TLVTag.Transaction_Freeze_Pin, pin.getBytes());
-        transmitApdu(Commands.verifyTxPin(tlvBox.serialize()));
-        return true;
-    }
-
-    @Override
-    public boolean updateTransactionPin(String oldPin, String newPin) throws CommandException {
-        TLVBox tlvBox = new TLVBox();
-        tlvBox.putBytesValue(Commands.TLVTag.Transaction_Freeze_Pin, oldPin.getBytes());
-        transmitApdu(Commands.verifyTxPin(tlvBox.serialize()));
-
-        TLVBox tlvBox1 = new TLVBox();
-        tlvBox1.putBytesValue(Commands.TLVTag.Transaction_Freeze_Pin, newPin.getBytes());
-        transmitApdu(Commands.updateTxPin(tlvBox1.serialize()));
-        return true;
-    }
-
-    @Override
-    public EntSignature doSign(byte[] hash, Card card) throws CommandException {
+    public Pair signTransactionHash(byte[] hash, byte[] publicKey) throws CommandException {
         TLVBox tlvBox = new TLVBox();
         tlvBox.putBytesValue(Commands.TLVTag.Transaction_Hash, hash);
         try {
@@ -264,24 +98,14 @@ public class CardManager implements CardInterface {
             String r = signature.substring(0, 64);
             String s = signature.substring(64);
             ECKey.ECDSASignature sig = new ECKey.ECDSASignature(new BigInteger(r, 16), new BigInteger(s, 16)).toCanonicalised();
-            int recId = -1;
-            byte[] thisKey = card.getEthECKey().getPubKey();
-
-            for (int i = 0; i < 4; ++i) {
-                byte[] k = ECKey.recoverPubBytesFromSignature(i, sig, hash);
-                if (k != null && Arrays.equals(k, thisKey)) {
-                    recId = i;
-                    break;
-                }
-            }
-            return new EntSignature(sig.r.toString(16), sig.s.toString(16), recId);
+            return new Pair(sig.r.toByteArray(),sig.s.toByteArray());
         } catch (CommandException e) {
             throw e;
         }
     }
 
     @Override
-    public String getPublicKey() throws CommandException {
+    public byte[] readBlockchainPublicKey() throws CommandException {
         try {
             byte[] bytes = ByteUtil.hexStringToBytes(transmitApdu(Commands.getCurrencyPubKey()));
             TLVBox signatureTLV = TLVBox.parse(bytes, 0, bytes.length);
@@ -289,11 +113,11 @@ public class CardManager implements CardInterface {
             if (TextUtils.isEmpty(pubKey))
                 throw new CommandException(ErrorCode.INVALID_CARD, "wrong public key format");
             if (pubKey.length() == 130 && pubKey.startsWith("04"))
-                return pubKey;
+                return ByteUtil.hexStringToBytes(pubKey);
             else if (pubKey.length() == 128)
-                return "04" + pubKey;
+                return ByteUtil.hexStringToBytes("04" + pubKey);
             else if (pubKey.length() == 66 && (pubKey.startsWith("02") || pubKey.startsWith("03")))
-                return pubKey;
+                return ByteUtil.hexStringToBytes(pubKey);
             throw new CommandException(ErrorCode.INVALID_CARD, "wrong public key format");
         } catch (CommandException e) {
             throw e;
@@ -301,7 +125,7 @@ public class CardManager implements CardInterface {
     }
 
     @Override
-    public int getSignatureCount() throws CommandException {
+    public int readTransactionSignCounter() throws CommandException {
         try {
             byte[] bytes = ByteUtil.hexStringToBytes(transmitApdu(Commands.getTxSignCounter()));
             TLVBox signatureTLV = TLVBox.parse(bytes, 0, bytes.length);
@@ -317,13 +141,40 @@ public class CardManager implements CardInterface {
     }
 
     @Override
-    public boolean challengeBloackChainPrv(String publicKey) {
+    public boolean verifyBloackchainPublicKey(byte[] publicKey) throws CommandException {
         try {
-            cardProvider.challengeBlockChainPrv(publicKey);
+            cardProvider.challengeBlockChainPrv(ByteUtil.toHexString(publicKey));
             return true;
         } catch (CommandException e) {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public static class Pair{
+        private byte[] r;
+        private byte[] s;
+
+        public Pair(byte[] r, byte[] s){
+            this.r=r;
+            this.s=s;
+        }
+
+        public byte[] getR() {
+            return r;
+        }
+
+        public void setR(byte[] r) {
+            this.r = r;
+        }
+
+        public byte[] getS() {
+            return s;
+        }
+
+        public void setS(byte[] s) {
+            this.s = s;
+        }
+
     }
 }

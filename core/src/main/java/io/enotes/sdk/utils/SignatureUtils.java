@@ -64,30 +64,7 @@ public class SignatureUtils {
         }
     }
 
-    /**
-     * Convert der signature to org.bitcoinj.core.ECKey.ECDSASignature
-     *
-     * @param derSignature
-     * @return
-     */
-    public static org.bitcoinj.core.ECKey.ECDSASignature der2BtcSignature(@NonNull String derSignature) {
-        return org.bitcoinj.core.ECKey.ECDSASignature.decodeFromDER(ByteUtil.hexStringToBytes(derSignature)).toCanonicalised();
-    }
 
-    /**
-     * Convert str signature to org.bitcoinj.core.ECKey.ECDSASignature
-     *
-     * @param strSignature
-     * @return
-     */
-    public static org.bitcoinj.core.ECKey.ECDSASignature str2BtcSignature(@NonNull String strSignature) {
-        if (strSignature.length() != 128) {
-            throw new RuntimeException("signature illegal");
-        }
-        String r = strSignature.substring(0, 64);
-        String s = strSignature.substring(64);
-        return new org.bitcoinj.core.ECKey.ECDSASignature(new BigInteger(r, 16), new BigInteger(s, 16)).toCanonicalised();
-    }
 
     /**
      * device private key Challenge

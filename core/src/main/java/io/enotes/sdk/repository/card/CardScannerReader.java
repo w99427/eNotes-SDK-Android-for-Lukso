@@ -24,21 +24,16 @@ import io.enotes.sdk.core.ENotesSDK;
 import io.enotes.sdk.repository.base.Resource;
 import io.enotes.sdk.repository.db.entity.Card;
 import io.enotes.sdk.repository.db.entity.Cert;
-import io.enotes.sdk.utils.CardUtils;
 import io.enotes.sdk.utils.LogUtils;
 import io.enotes.sdk.utils.ReaderUtils;
 import io.reactivex.Completable;
 import io.reactivex.schedulers.Schedulers;
 
-import static io.enotes.sdk.constant.Constant.BlockChain.ETHEREUM;
 import static io.enotes.sdk.constant.ErrorCode.BLUETOOTH_DISCONNECT;
-import static io.enotes.sdk.constant.Status.BLUETOOTH_PARSING;
-import static io.enotes.sdk.constant.Status.BLUETOOTH_SCAN_FINISH;
 import static io.enotes.sdk.constant.Status.ERROR;
 import static io.enotes.sdk.constant.Status.NFC_CONNECTED;
 import static io.enotes.sdk.constant.Status.SUCCESS;
 import static io.enotes.sdk.utils.SignatureUtils.blockChainPrvChallenge;
-import static io.enotes.sdk.utils.SignatureUtils.devicePrvChallenge;
 
 
 /**
@@ -53,14 +48,12 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
     private List<ScannerReader> mScannerReaders = new ArrayList<>();
     private ScannerReader mCurrentScannerReader;
     private ScannerReader mNfcScannerReader;
-    private ScannerReader mBleScannerReader;
     private ICardScanner.ScanCallback mScanCallback;
     private ICardReader.ConnectedCallback mConnectedCallback;
     private MutableLiveData<Resource<Card>> mCard = new MutableLiveData<>();
     private MediatorLiveData<Resource<Reader>> mReader = new MediatorLiveData<>();
     private Handler handler = new Handler();
     private Card connectedCard;
-    private long cardIdForSimulate;
 
     public static class Builder {
         private Context mContext;
@@ -92,9 +85,7 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
             if ((mScanMode & NFC_MODE) != 0 && ((mReadMode & (NFC_AUTO_MODE ^ NFC_MANUAL_MODE)) == 0)) {
                 throw new IllegalArgumentException("Please set NFC read mode!");
             }
-            if ((mScanMode & BLE_MODE) != 0 && ((mReadMode & (BLE_AUTO_MODE ^ BLE_MANUAL_MODE)) == 0)) {
-                throw new IllegalArgumentException("Please set BLE read mode!");
-            }
+
             return new CardScannerReader(mContext, mTargetAID, mScanMode, mReadMode);
         }
     }
@@ -125,22 +116,16 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
         if ((scanMode & NFC_MODE) != 0 && ((readMode & (NFC_AUTO_MODE ^ NFC_MANUAL_MODE)) == 0)) {
             throw new IllegalArgumentException("Invalid NFC scan/read mode!");
         }
-        if ((scanMode & BLE_MODE) != 0 && ((readMode & (BLE_AUTO_MODE ^ BLE_MANUAL_MODE)) == 0)) {
-            throw new IllegalArgumentException("Invalid BLE scan/read mode!");
-        }
+
         if (scanMode == mScanMode && readMode == mReadMode) {
             return;
         }
         boolean canNfc = ((scanMode & NFC_MODE) != 0) && ReaderUtils.supportNfc(mContext);
-        boolean canBle = ((scanMode & BLE_MODE) != 0) && ReaderUtils.supportBluetooth(mContext);
         if (!canNfc && mNfcScannerReader != null) {
             release(mNfcScannerReader);
             mNfcScannerReader = null;
         }
-        if (!canBle && mBleScannerReader != null) {
-            release(mBleScannerReader);
-            mBleScannerReader = null;
-        }
+
         mScanMode = scanMode;
         mReadMode = readMode;
         if (canNfc && mNfcScannerReader == null) {
@@ -148,11 +133,7 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
                     new NfcCardReader(this));
             mScannerReaders.add(mNfcScannerReader);
         }
-        if (canBle && mBleScannerReader == null) {
-            mBleScannerReader = ScannerReader.build(new BleCardScanner(mContext, this),
-                    new BleCardReader(mContext, this));
-            mScannerReaders.add(mBleScannerReader);
-        }
+
     }
 
     private void release(ScannerReader scannerReader) {
@@ -180,29 +161,17 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
             case SUCCESS:
                 // Usually UI observer display the card result and pass the card back by #parseAndConnect if it's manual mode.
                 boolean isNfcCard = card.data.getTag() != null;
-                boolean isBleCard = card.data.getDeviceInfo() != null;
                 boolean isOneBleCard = true;
                 // pass to reader, card with tag or devices if it's auto read mode
                 boolean autoConnectNfc = isNfcCard && ((mReadMode & NFC_AUTO_MODE) != 0);
-                boolean autoConnectBle = isBleCard && (
-                        (((mReadMode & BLE_AUTO_MODE) != 0) && ((mReadMode & BLE_MANUAL_MODE) == 0))//auto mode
-                                ||
-                                (((mReadMode & BLE_AUTO_MODE) != 0) && ((mReadMode & BLE_MANUAL_MODE) != 0)
-                                        && isOneBleCard)// manual auto mode
-                );
-                if (autoConnectNfc || autoConnectBle) {
-                    if (card.data.getDeviceInfo() == null)
-                        parseAndConnect(card.data);
-                    else
-                        mReader.postValue(card);
+
+                if (autoConnectNfc) {
+                    parseAndConnect(card.data);
                 }
                 break;
             case ERROR:
                 // here is always of the callback of ble scanner
                 mReader.postValue(Resource.error(card.errorCode, card.message));
-                break;
-            case BLUETOOTH_SCAN_FINISH:
-                mReader.postValue(Resource.bluetoothScanFinish(card.message));
                 break;
         }
         if (mScanCallback != null) mScanCallback.onCardScanned(card);
@@ -229,12 +198,7 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
     public void startScan() {
 //        mReader.postValue(Resource.start("start scan"));
         List<ScannerReader> scannerReaders = mScannerReaders;
-        for (ScannerReader scannerReader : scannerReaders) {
-            if (scannerReader == mBleScannerReader) {
-                scannerReader.mCardReader.disconnect();
-                scannerReader.mCardScanner.startScan();
-            }
-        }
+
     }
 
     @Override
@@ -292,21 +256,6 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
     public void parseAndConnect(@NonNull Reader reader) {
         List<ScannerReader> scannerReaders = mScannerReaders;
         for (ScannerReader scannerReader : scannerReaders) {
-            if (ENotesSDK.config.debugForEmulatorCard) {
-                if (scannerReader.mCardReader instanceof BleCardReader && reader.getDeviceInfo() != null) {
-
-                    new Thread(() -> {
-
-                        mCurrentScannerReader = scannerReader;
-                        detectCard();
-                        parseCardFinish();
-
-                    }).start();
-
-
-                    continue;
-                }
-            }
             // connect in parallel
             Completable.fromAction(() -> scannerReader.mCardReader.parseAndConnect(reader))
                     .subscribeOn(Schedulers.newThread()).subscribe();
@@ -374,10 +323,7 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
                 connectedCard = null;
                 mCard.postValue(Resource.error(reader.errorCode, reader.message));
                 break;
-            case BLUETOOTH_PARSING:
-                connectedCard = null;
-                mCard.postValue(Resource.bluetoothParsingCard(reader.message));
-                break;
+
             case BLUETOOTH_DISCONNECT:
                 connectedCard = null;
                 mCard.postValue(Resource.error(ErrorCode.BLUETOOTH_DISCONNECT, reader.message));
@@ -420,14 +366,8 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
                 mCard.postValue(Resource.success(card));
                 return;
             }
-            readApduVersion();
-            card.setCert(readCert());
             card.setCurrencyPubKey(readCurrencyPubKey());
-            setCurrencyAddress(card);
             card.setStatus(readStatus());
-            read1_2_0VersionData(card);
-//            checkDevicePrv(ByteUtil.hexStringToBytes(card.getCert().getPublicKey()));
-//            checkBlockChainPrv(CardUtils.isBTC(card.getCert().getBlockChain()) ? card.getBitCoinECKey().getPubKey() : card.getEthECKey().getPubKey());
             connectedCard = card;
             //differentiate success type
             if (mCurrentScannerReader.mCardReader instanceof NfcCardReader)
@@ -445,12 +385,7 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
         }
     }
 
-    private void readApduVersion() throws CommandException {
-        String version = new String(transceive2TLV(Command.newCmd().setDesc("apdu version").setCmdStr("00CA0012")).getBytesValue(Commands.TLVTag.Apdu_Protocol_Version));
-        if (version.compareTo(Constant.APDU.APDU_VERSION) > 0 && !ENotesSDK.config.debugCard) {
-            throw new CommandException(ErrorCode.NOT_SUPPORT_CARD, "Not Support");
-        }
-    }
+
 
     private Cert readCert() throws CommandException {
         LogUtils.d(TAG, "read cert");
@@ -480,12 +415,7 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
             if (cert.getCertVersion() > Constant.APDU.CERT_VERSION && !ENotesSDK.config.debugCard) {
                 throw new CommandException(ErrorCode.NOT_SUPPORT_CARD, "Not Support");
             }
-//            if (!cert.getBlockChain().equals(Constant.BlockChain.BITCOIN) && !cert.getBlockChain().equals(Constant.BlockChain.ETHEREUM) && !cert.getBlockChain().equals(Constant.BlockChain.BITCOIN_CASH) && !cert.getBlockChain().equals(Constant.BlockChain.RIPPLE)) {
-//                throw new CommandException(ErrorCode.NOT_SUPPORT_CARD, "Not Support");
-//            }
             LogUtils.i(TAG, cert.toString());
-            //verify manufacture cert
-//            verifyCert(cert);
 
         } catch (IllegalArgumentException ex) {
             throw new CommandException("Invalid cert", ex);
@@ -495,17 +425,7 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
     }
 
 
-    /**
-     * verify device private key
-     *
-     * @param publicKey
-     * @throws CommandException
-     */
-    private void checkDevicePrv(byte[] publicKey) throws CommandException {
-        LogUtils.d(TAG, "Device private key challenge start");
-        devicePrvChallenge(this, publicKey);
-        LogUtils.d(TAG, "Device private key challenge success");
-    }
+
 
     /**
      * get block chain public key
@@ -548,7 +468,6 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
      */
     private void setCurrencyAddress(Card card) throws CommandException {
         LogUtils.d(TAG, "calculate address");
-        card.setAddress(CardUtils.getAddress(card, ETHEREUM));
         if (card.getAddress() == null) {
             throw new CommandException(ErrorCode.INVALID_CARD, "No valid currency public key");
         }

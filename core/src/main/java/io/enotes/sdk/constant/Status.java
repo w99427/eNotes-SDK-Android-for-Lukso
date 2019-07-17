@@ -13,24 +13,6 @@ public class Status {
      * nfc is connected , will begin parse card
      */
     public static final int NFC_CONNECTED = 2;
-    /**
-     * connecting bluetooth device
-     */
-    public static final int BLUETOOTH_CONNECTING = 3;
-    /**
-     * bluetooth device is connected
-     */
-    public static final int BLUETOOTH_CONNECTED = 4;
-
-    /**
-     * bluetooth parsing card
-     */
-    public static final int BLUETOOTH_PARSING = 5;
-
-    /**
-     * bluetooth scan finish
-     */
-    public static final int BLUETOOTH_SCAN_FINISH = 6;
 
     /**
      * card parse finish
