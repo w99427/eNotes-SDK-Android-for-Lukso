@@ -11,7 +11,6 @@ import android.support.annotation.Nullable;
 
 import org.ethereum.util.ByteUtil;
 
-import io.enotes.sdk.repository.base.BaseManager;
 import io.enotes.sdk.repository.base.Resource;
 import io.enotes.sdk.repository.card.CardScannerReader;
 import io.enotes.sdk.repository.card.Command;
@@ -23,7 +22,7 @@ import io.enotes.sdk.repository.card.TLVBox;
 import io.enotes.sdk.repository.db.entity.Card;
 
 
-public class CardProvider implements BaseManager {
+public class CardProvider {
     private CardScannerReader mCardScannerReader;
 
     public CardProvider(Context context) {

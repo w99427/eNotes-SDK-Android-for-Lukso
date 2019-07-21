@@ -6,10 +6,6 @@ public class ErrorCode {
      */
     public static final int NOT_ERROR = 0;
     /**
-     * bluetooth disconnect
-     */
-    public static final int BLUETOOTH_DISCONNECT = 100;
-    /**
      * nfc disconnect
      */
     public static final int NFC_DISCONNECTED = 101;

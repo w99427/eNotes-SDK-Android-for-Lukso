@@ -29,7 +29,6 @@ import io.enotes.sdk.utils.ReaderUtils;
 import io.reactivex.Completable;
 import io.reactivex.schedulers.Schedulers;
 
-import static io.enotes.sdk.constant.ErrorCode.BLUETOOTH_DISCONNECT;
 import static io.enotes.sdk.constant.Status.ERROR;
 import static io.enotes.sdk.constant.Status.NFC_CONNECTED;
 import static io.enotes.sdk.constant.Status.SUCCESS;
@@ -324,11 +323,6 @@ public class CardScannerReader implements ICardScanner, ICardReader, ICardScanne
                 mCard.postValue(Resource.error(reader.errorCode, reader.message));
                 break;
 
-            case BLUETOOTH_DISCONNECT:
-                connectedCard = null;
-                mCard.postValue(Resource.error(ErrorCode.BLUETOOTH_DISCONNECT, reader.message));
-                parseCardFinish();
-                break;
         }
         if (mConnectedCallback != null) mConnectedCallback.onCardConnected(reader);
     }
