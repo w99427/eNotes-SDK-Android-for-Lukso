@@ -2,27 +2,52 @@
 
 ## Requirements
 
-- Android x.x+
-- Gradle x.x.x
-或者还有其他需要补充的。
+- Android 5.1+
+- Gradle 3.4.0
 
 ## Installation
 
-描述一下SDK的安全方法。
+api project(':core')
 
 ## Usage
 
 ### Get CardManager
 
-描述一下获得CardMnager对象
+CardManager cardManager = new CardManager(activity);
 
 ### API
 
-描述一下那几个API
+- readBlockchainPublicKey
+```
+byte[] publicKey = mCardManager.readBlockchainPublicKey();
+
+```
+
+- readTransactionSignCounter
+```
+int signCount = mCardManager.readTransactionSignCounter();
+```
+
+- verifyBloackchainPublicKey
+```
+boolean verify = mCardManager.verifyBloackchainPublicKey(mPublicKey)
+```
+
+- signTransactionHash
+```
+CardManager.Pair pair = mCardManager.signTransactionHash(tx.getRawHash(), mPublicKey);
+byte[] r = pair.getR();
+byte[] s = pair.getS();
+```
 
 ### Permissions
 
-描述一下需要哪些权限
+```
+    <uses-feature
+        android:name="android.hardware.nfc"
+        android:required="false" />
+    <uses-permission android:name="android.permission.NFC" />
+```
 
 ## Example
 
