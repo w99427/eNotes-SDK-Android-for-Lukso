@@ -28,9 +28,9 @@ byte[] publicKey = mCardManager.readBlockchainPublicKey();
 int signCount = mCardManager.readTransactionSignCounter();
 ```
 
-- verifyBloackchainPublicKey
+- verifyBloackchainPublicKey (challenge-response)
 ```
-boolean verify = mCardManager.verifyBloackchainPublicKey(mPublicKey)
+boolean result = mCardManager.verifyBloackchainPublicKey(mPublicKey)
 ```
 
 - signTransactionHash
