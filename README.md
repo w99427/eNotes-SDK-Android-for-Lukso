@@ -59,4 +59,4 @@ There is an example application in ```/example``` folder, please check it for yo
 
 ## License
 
-eNotesSDKLukso is available under the MIT license. See the LICENSE file for more info.
+eNotes Android SDK for LUKSO is available under the MIT license. See the LICENSE file for more info.
